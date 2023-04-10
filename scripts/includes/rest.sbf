@@ -1,0 +1,10 @@
+{
+    $name=rest
+    trigger=GlobalTimerExpired("RR#Rest","LOCALS")
+    action=SetGlobalTimer("RR#Rest","LOCALS",2400)&Rest()
+}
+{
+    $name=heal
+    action=ApplySpell(Myself,RESTORE_FULL_HEALTH)
+}
+
