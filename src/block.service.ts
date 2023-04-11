@@ -15,6 +15,7 @@ export class BlockService {
   }
 
   mergeBlock(block: Block, block2: Block) {
+    console.log("merge", block2);
     block.actions.push(...block2.actions);
     block.targets.push(...block2.targets);
     block.triggers.push(...block2.triggers);

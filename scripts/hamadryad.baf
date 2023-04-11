@@ -1,1 +1,30 @@
-// Remove spells that can only be cast outdoor// {//     action=$rest()&$heal()// }IF	Global("RR#Active","LOCALS",0)    !Allegiance(Myself,GOODCUTOFF)	OR(3)	  AttackedBy([ANYONE],DEFAULT)	  TookDamage()	  Heard([EVILCUTOFF.0.FAIRY],99) // other fey creaturesTHEN	RESPONSE #100		SetGlobal("RR#Active","LOCALS",1)		SetGlobalTimer("RR#Rest","LOCALS",2400) // 8 hours		SetGlobalTimer("RR#Help","LOCALS",18)		Enemy()		Shout(99)END
+// Remove spells that can only be cast outdoorIF
+	!AreaType(OUTDOOR)
+	action=RemoveSpellRES("rr#ddoor")
+	action=RemoveSpellRES("rr#fdsnr")
+	local=rr#trees(0,1)
+	Global("rr#trees","LOCALS",0)
+THEN
+	RESPONSE #100
+		RemoveSpellRES("rr#ddoor")
+		RemoveSpellRES("rr#fdsnr")
+		local=rr#trees(0,1)
+		SetGlobal("rr#trees","LOCALS",1)
+END
+IF
+	GlobalTimerExpired("RR#Rest","LOCALS")
+	action=SetGlobalTimer("RR#Rest","LOCALS",2400)
+	Rest()
+THEN
+	RESPONSE #100
+		SetGlobalTimer("RR#Rest","LOCALS",2400)
+		Rest()
+END
+IF	Global("RR#Active","LOCALS",0)    !Allegiance(Myself,GOODCUTOFF)	OR(3)	  AttackedBy([ANYONE],DEFAULT)	  TookDamage()	  Heard([EVILCUTOFF.0.FAIRY],99) // other fey creaturesTHEN	RESPONSE #100		SetGlobal("RR#Active","LOCALS",1)		SetGlobalTimer("RR#Rest","LOCALS",2400) // 8 hours		SetGlobalTimer("RR#Help","LOCALS",18)		Enemy()		Shout(99)ENDIF
+	!Allegiance(Myself,GOODCUTOFF)
+	Global("RR#Active","LOCALS",0)
+THEN
+	RESPONSE #100
+		Enemy()
+		SetGlobal("RR#Active","LOCALS",1)
+END

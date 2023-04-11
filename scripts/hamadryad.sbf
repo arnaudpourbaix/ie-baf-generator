@@ -9,9 +9,9 @@
     local=rr#trees(0,1)
 }
 
-// {
-//     action=$rest()&$heal()
-// }
+{
+    action=$rest()&$heal()
+}
 
 IF
 	Global("RR#Active","LOCALS",0)

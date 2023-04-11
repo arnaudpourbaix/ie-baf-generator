@@ -26,17 +26,23 @@ if (!process.argv.slice(2).length) {
 }
 
 async function main() {
-  if (options.include) {
-    const includes = await glob(options.include);
-    includes.forEach(async (file) => {
-      await processFile(file);
+  //   if (options.include) {
+  //     const includes = await glob(options.include);
+  //     includes.forEach(async (file) => {
+  //       await processFile(file);
+  //     });
+  //   }
+  return glob(options.file).then((files) => {
+    let chain: Promise<any> = Promise.resolve();
+    files.forEach((file) => {
+      chain = chain
+        .then(() => processFile(file))
+        .then((output) => {
+          const outputFile = file.replace(".sbf", ".baf");
+          fs.writeFileSync(outputFile, output);
+        });
     });
-  }
-  const files = await glob(options.file);
-  files.forEach(async (file) => {
-    const output = await processFile(file);
-    const outputFile = file.replace(".sbf", ".baf");
-    fs.writeFileSync(outputFile, output);
+    return chain;
   });
 }
 

@@ -1,4 +1,5 @@
 export function extractKeyword(keyword: string, text: string): string[] {
+  console.log("extractKeyword", keyword, text);
   const matches = new RegExp(`${keyword}=([^;\n]+)`).exec(text);
   if (!matches) return [];
   const values = extractKeywordValue(matches[1]);
@@ -7,7 +8,8 @@ export function extractKeyword(keyword: string, text: string): string[] {
 
 export function extractKeywordValue(keywordValue: string): string[] {
   const results = [] as string[];
-  const keywordValues = keywordValue.split("&");
+  console.log("extractKeywordValue", keywordValue);
+  const keywordValues = keywordValue.split(/[\n\s]+/);
   keywordValues.forEach((value) => {
     const matches = /([^(]+)\(([^)]*)\)/.exec(value);
     if (matches === null) throw new Error(`Invalid code: ${value}`);

@@ -4,51 +4,72 @@ import { blockService } from "./block.service";
 import { macroService } from "./macro.service";
 import { getFilename } from "./extract";
 
-export async function processFile(filename: string): Promise<string> {
+export function processFile(filename: string): Promise<string> {
   const content = fs.readFileSync(filename, { encoding: "utf8", flag: "r" });
-  const output = [] as string[];
-  let block = "";
-  content.split("\n").forEach(async (line) => {
-    console.log("processFile", line);
-    const blockStart = /^\s*\{/.test(line);
-    const blockEnd = /^(?<!\/\/)[^}]*\}\s*$/.test(line);
-    if (blockStart || block.length) {
-      block += line.slice(0, -1);
-    }
-    if (blockEnd && block.length) {
-      const b = block;
-      block = "";
-      output.push(...(await processText(b)));
-    } else if (!block.length) output.push(line);
+  let chain: Promise<any> = Promise.resolve();
+  const payload = {
+    output: [] as string[],
+    block: "",
+  };
+  content.split("\n").forEach((line) => {
+    chain = chain.then(() => processLine(payload, line));
   });
-  return Promise.resolve(output.join(""));
+  return chain.then(() => payload.output.join(""));
 }
 
-export async function processText(text: string): Promise<string[]> {
-  console.log("processText START", text);
-  const results = [];
+export function processLine(
+  payload: { output: string[]; block: string },
+  line: string
+): Promise<any> {
+  //   console.log("processFile", line);
+  const blockStart = /^\s*\{/.test(line);
+  const blockEnd = /^(?<!\/\/)[^}]*\}\s*$/.test(line);
+  if (blockStart || payload.block.length) {
+    // payload.block += line.slice(0, -1);
+    payload.block += line.replace(/[\r\n]/g, " ");
+  }
+  if (blockEnd && payload.block.length) {
+    const b = payload.block;
+    payload.block = "";
+    return processBlock(b).then((r) => payload.output.push(...r));
+  } else if (!payload.block.length) {
+    payload.output.push(line);
+  }
+  return Promise.resolve();
+}
+
+export function processBlock(text: string): Promise<string[]> {
+  //   console.log("processBlock START", text);
+  const results = [] as string[];
   const hasRegisterMacro = macroService.registerMacro(text);
   const isInclude = /include=[^}]+/.test(text);
+  let chain: Promise<any> = Promise.resolve();
   if (isInclude) {
-    await includeFiles(text);
-    //results.push(...(await includeFiles(text)));
+    chain = chain
+      .then(() => includeFiles(text))
+      .then((r) => results.push(...r));
   } else if (!hasRegisterMacro) {
     const block = blockService.create(text);
     results.push(...blockService.generate(block));
   }
-  console.log("processText END", text);
-  return Promise.resolve(results);
+  return chain.then(() => {
+    // console.log("processBlock END", text);
+    return results;
+  });
 }
 
-export async function includeFiles(text: string): Promise<string[]> {
+export function includeFiles(text: string): Promise<string[]> {
   const matches = /include=([^}]+)/.exec(text);
   if (matches === null) throw new Error(`Invalid include: ${text}`);
   const filename = getFilename(matches[1]);
-  const files = await glob(filename);
-  const output = [] as string[];
-  files.forEach(async (file) => {
-    //output.push(...(await processFile(file)));
-    // await processFile(file);
+  return glob(filename).then((files) => {
+    let chain: Promise<any> = Promise.resolve();
+    const output = [] as string[];
+    files.forEach((file) => {
+      chain = chain
+        .then(() => processFile(file))
+        .then((r) => output.push(...r));
+    });
+    return chain.then(() => output);
   });
-  return Promise.resolve(output);
 }
